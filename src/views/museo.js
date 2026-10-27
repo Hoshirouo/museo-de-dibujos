@@ -5,6 +5,8 @@ import { esc, urlDe, fechaISO, inicioSemana, modal, toast, escalonar, miniatura,
 import { retoDelDia } from '../data/calendario.js';
 import { diasDibujados, resumenMetas } from './metas.js';
 import { recargar } from '../main.js';
+import { personajeVivo } from '../personaje.js';
+import { abrirCreador } from '../creador.js';
 
 // Letrero colgante bajo una ventana.
 const letrero = (x, y, ancho, texto) => `
@@ -232,6 +234,7 @@ export default async function museo(el) {
   const dias = await diasDibujados(inicioSemana());
   const hechosMes = new Set(diario.map((d) => d.fecha));
   const recientes = obras.slice(0, 4);
+  const tipoAvatar = avatarDe(p);
 
   const portada = p.portada ? `<img class="portada-img" src="${urlDe(p.portada)}" alt="">` : '';
   const decos = p.portada
@@ -272,7 +275,10 @@ export default async function museo(el) {
   el.innerHTML = `
     <div class="portada">${portada}${decos}<button class="btn chico" data-acc="personalizar">✎ Personalizar</button></div>
     <div class="perfil-cabecera">
-      <div class="avatar">${p.avatar ? `<img src="${urlDe(p.avatar)}" alt="Foto de perfil">` : `<span aria-hidden="true">${esc(p.avatarEmoji)}</span>`}</div>
+      <div class="avatar">
+        <div class="avatar-marco ${tipoAvatar === 'personaje' ? 'con-personaje' : ''}" data-avatar>${tipoAvatar === 'foto' ? `<img src="${urlDe(p.avatar)}" alt="Foto de perfil">` : tipoAvatar === 'emoji' ? `<span aria-hidden="true">${esc(p.avatarEmoji)}</span>` : ''}</div>
+        <button class="avatar-editar" data-acc="personaje" aria-label="Editar mi personaje" title="Editar mi personaje">✎</button>
+      </div>
       <div class="perfil-texto"><h1>${esc(p.nombre)}</h1><p>${esc(p.bio)}</p></div>
     </div>
     <div class="tablero">
@@ -354,6 +360,29 @@ export default async function museo(el) {
   });
 
   el.querySelector('[data-acc="personalizar"]').addEventListener('click', () => personalizar(p));
+
+  if (tipoAvatar === 'personaje') el.querySelector('[data-avatar]').append(personajeVivo(p.personaje, { escala: 6, filas: 18 }));
+  const crear = async (bienvenida) => {
+    const nuevo = await abrirCreador(p.personaje, { bienvenida });
+    if (!nuevo) return;
+    await guardarPerfil({ ...p, personaje: nuevo, avatarTipo: 'personaje' });
+    toast('¡Tu personaje está listo! ✿');
+    recargar();
+  };
+  el.querySelector('[data-acc="personaje"]').addEventListener('click', () => crear(false));
+  // La primera vez que se abre la web, se abre el creador de personaje.
+  if (!p.personaje && !(await ajuste('creadorVisto', false))) {
+    await guardarAjuste('creadorVisto', true);
+    setTimeout(() => el.isConnected && crear(true), 700);
+  }
+}
+
+// Qué se muestra en la foto de perfil: el personaje, una foto o un emoji.
+function avatarDe(p) {
+  const tipo = p.avatarTipo || (p.personaje ? 'personaje' : p.avatar ? 'foto' : 'emoji');
+  if (tipo === 'personaje' && p.personaje) return 'personaje';
+  if (tipo === 'foto' && p.avatar) return 'foto';
+  return 'emoji';
 }
 
 function personalizar(p) {
@@ -365,11 +394,16 @@ function personalizar(p) {
       <div class="campo"><label for="pf">Frase favorita</label><textarea id="pf" name="frase" maxlength="300">${esc(p.frase)}</textarea></div>
       <div class="campo"><label for="pp">Imagen de portada</label><input id="pp" type="file" name="portada" accept="image/*">
         ${p.portada ? '<label class="ayuda"><input type="checkbox" name="quitarPortada"> Quitar la portada actual</label>' : ''}</div>
+      <div class="campo"><span>En la foto de perfil mostrar</span>
+        <div class="fila">${[['personaje', 'Mi personaje'], ['foto', 'Una foto'], ['emoji', 'Un emoji']]
+          .map(([v, t]) => `<label><input type="radio" name="avatarTipo" value="${v}" ${avatarDe(p) === v ? 'checked' : ''}> ${t}</label>`)
+          .join('')}</div>
+        ${p.personaje ? '' : '<span class="ayuda">Crea tu personaje con el botón ✎ de la foto de perfil.</span>'}</div>
       <div class="fila">
         <div class="campo" style="flex:2"><label for="pa">Foto de perfil</label><input id="pa" type="file" name="avatar" accept="image/*"></div>
         <div class="campo" style="flex:1"><label for="pe">o un emoji</label><input id="pe" name="avatarEmoji" maxlength="4" value="${esc(p.avatarEmoji)}"></div>
       </div>
-      ${p.avatar ? '<label class="ayuda" style="display:block;margin:-8px 0 14px"><input type="checkbox" name="quitarAvatar"> Quitar la foto y usar el emoji</label>' : ''}
+      ${p.avatar ? '<label class="ayuda" style="display:block;margin:-8px 0 14px"><input type="checkbox" name="quitarAvatar"> Quitar la foto</label>' : ''}
       <div class="campo"><label for="pm">Canción (archivo de audio)</label><input id="pm" type="file" name="musica" accept="audio/*">
         ${p.musica ? '<label class="ayuda"><input type="checkbox" name="quitarMusica"> Quitar la canción</label>' : ''}</div>
       <div class="campo"><label for="pc">Nombre de la canción</label><input id="pc" name="cancion" maxlength="80" value="${esc(p.cancion)}" placeholder="Ej: Snow flower — V"></div>
@@ -388,12 +422,15 @@ function personalizar(p) {
       frase: f.get('frase').trim(),
       avatarEmoji: f.get('avatarEmoji').trim() || '🎨',
       cancion: f.get('cancion').trim(),
+      avatarTipo: f.get('avatarTipo') || avatarDe(p),
     };
     const archivo = (n) => (f.get(n) && f.get(n).size ? f.get(n) : null);
     if (archivo('portada')) nuevo.portada = await miniatura(archivo('portada'), 2000);
     else if (f.get('quitarPortada')) delete nuevo.portada;
-    if (archivo('avatar')) nuevo.avatar = await miniatura(archivo('avatar'), 400);
-    else if (f.get('quitarAvatar')) delete nuevo.avatar;
+    if (archivo('avatar')) {
+      nuevo.avatar = await miniatura(archivo('avatar'), 400);
+      nuevo.avatarTipo = 'foto';
+    } else if (f.get('quitarAvatar')) delete nuevo.avatar;
     if (archivo('musica')) {
       nuevo.musica = archivo('musica');
       if (!nuevo.cancion) nuevo.cancion = nuevo.musica.name.replace(/\.[^.]+$/, '');
