@@ -25,13 +25,13 @@ const azar = (lista) => lista[Math.floor(Math.random() * lista.length)];
 export function segmentosPremio(fecha) {
   const est = estacion(fecha.getMonth());
   return [
-    { etiqueta: '5 plátanos', icono: '🍌', color: '#f7d98b', premio: () => ({ item: 'Plátano', cantidad: 5 }) },
-    { etiqueta: 'Semillas', icono: '🌱', color: '#b1c294', premio: () => ({ item: `Semillas de ${azar(CULTIVOS[est]).toLowerCase()}`, cantidad: 5 }) },
-    { etiqueta: 'Ropa', icono: '👒', color: '#f0a39a', premio: () => ({ item: ROPA[est], cantidad: 1 }) },
-    { etiqueta: '3 huevos', icono: '🥚', color: '#eadfc8', premio: () => ({ item: 'Huevo', cantidad: 3 }) },
-    { etiqueta: 'Mueble', icono: '🪑', color: '#a9c1e3', premio: () => ({ item: MUEBLE[est], cantidad: 1 }) },
-    { etiqueta: 'Semillas x2', icono: '🌿', color: '#7fa37a', premio: () => ({ item: `Semillas de ${azar(CULTIVOS[est]).toLowerCase()}`, cantidad: 10 }) },
-    { etiqueta: 'Fertilizante', icono: '🧺', color: '#e9c6ae', premio: () => ({ item: 'Fertilizante', cantidad: 3 }) },
-    { etiqueta: '20 monedas', icono: '🪙', color: '#e6b85c', premio: () => ({ item: 'Monedas', cantidad: 20 }) },
+    { etiqueta: '5 plátanos', icono: '🍌', premio: () => ({ item: 'Plátano', cantidad: 5 }) },
+    { etiqueta: 'Semillas', icono: '🌱', premio: () => ({ item: `Semillas de ${azar(CULTIVOS[est]).toLowerCase()}`, cantidad: 5 }) },
+    { etiqueta: 'Ropa', icono: '👒', premio: () => ({ item: ROPA[est], cantidad: 1 }) },
+    { etiqueta: '3 huevos', icono: '🥚', premio: () => ({ item: 'Huevo', cantidad: 3 }) },
+    { etiqueta: 'Mueble', icono: '🪑', premio: () => ({ item: MUEBLE[est], cantidad: 1 }) },
+    { etiqueta: 'Semillas x2', icono: '🌿', premio: () => ({ item: `Semillas de ${azar(CULTIVOS[est]).toLowerCase()}`, cantidad: 10 }) },
+    { etiqueta: 'Fertilizante', icono: '🧺', premio: () => ({ item: 'Fertilizante', cantidad: 3 }) },
+    { etiqueta: '20 monedas', icono: '🪙', premio: () => ({ item: 'Monedas', cantidad: 20 }) },
   ];
 }

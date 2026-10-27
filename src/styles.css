@@ -125,7 +125,7 @@
 
 :root {
   --radio: 18px;
-  --mano: 'Gaegu', 'Comic Sans MS', cursive;
+  --mano: 'Patrick Hand', 'Comic Sans MS', cursive;
   --texto: 'Nunito', system-ui, sans-serif;
   --madera: #a0714f;
   --madera-osc: #6e4a33;
@@ -584,3 +584,30 @@ a { color: inherit; }
 }
 ::view-transition-old(root), ::view-transition-new(root) { animation-duration: 0.25s; }
 .edificio .humo { transform-box: fill-box; transform-origin: center; }
+
+/* Patrick Hand solo tiene un grosor: evita la negrita falsa del navegador. */
+body { font-synthesis-weight: none; }
+
+/* ================= Colores de las ruletas por tema ================= */
+:root, [data-tema='salvia'] {
+  --r1: #5f7f5b; --r2: #c98a72; --r3: #5e6b58; --r4: #e6b85c; --r5: #7c9c86;
+  --r6: #6a9a76; --r7: #2f8a6f; --r8: #14707a; --r9: #2f6475; --r10: #365680;
+}
+[data-tema='matcha'] {
+  --r1: #4e6b2e; --r2: #7d9440; --r3: #c99a5b; --r4: #3f5a2a; --r5: #d98b7e;
+  --r6: #6b8f5a; --r7: #a3b35a; --r8: #b5865a; --r9: #5d7a3a; --r10: #8aa04f;
+}
+[data-tema='cielo'] {
+  --r1: #5f86b6; --r2: #e3a5b8; --r3: #4a6f9c; --r4: #7fb1a8; --r5: #6d95c4;
+  --r6: #c7a6e0; --r7: #3f5f8a; --r8: #8fb0d8; --r9: #5a7fae; --r10: #e6c27f;
+}
+[data-tema='fresa'] {
+  --r1: #e88fae; --r2: #9cc5a1; --r3: #d46f93; --r4: #f0a39a; --r5: #b5577a;
+  --r6: #7fb38a; --r7: #e6a5bf; --r8: #a64d6f; --r9: #f2c27f; --r10: #c96f8e;
+}
+[data-tema='noche'] {
+  --r1: #8f7ad6; --r2: #4f9c95; --r3: #c3a6f0; --r4: #5a6fb8; --r5: #b38ae0;
+  --r6: #3f7f9c; --r7: #6b5bb0; --r8: #7fc8b6; --r9: #d6a6e6; --r10: #9a86d9;
+}
+.rueda-giro path { transition: fill 0.4s; }
+.rueda-texto { fill: #fff; stroke: rgba(30, 30, 50, 0.45); stroke-width: 2.2px; paint-order: stroke; stroke-linejoin: round; font-weight: 800; }

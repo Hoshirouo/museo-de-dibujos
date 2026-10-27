@@ -6,12 +6,8 @@ const polar = (r, grados) => {
   return [100 + r * Math.cos(rad), 100 + r * Math.sin(rad)];
 };
 
-// Color de texto legible según el fondo.
-const tintaPara = (hex) => {
-  const n = parseInt(hex.slice(1), 16);
-  const l = (0.299 * (n >> 16) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255)) / 255;
-  return l > 0.62 ? '#2b3a6b' : '#fffdf6';
-};
+// Color del segmento i según el tema activo (variables --r1…--r10 en styles.css).
+export const colorRueda = (i) => `var(--r${(i % 10) + 1})`;
 
 export function rueda(segmentos, { dona = true } = {}) {
   const paso = 360 / segmentos.length;
@@ -20,14 +16,15 @@ export function rueda(segmentos, { dona = true } = {}) {
       const [x1, y1] = polar(96, i * paso);
       const [x2, y2] = polar(96, (i + 1) * paso);
       const medio = (i + 0.5) * paso;
-      const [tx, ty] = polar(dona ? 70 : 62, medio);
-      const tinta = tintaPara(s.color);
+      const [tx, ty] = polar(dona ? 68 : 62, medio);
+      // Las palabras largas se achican para no salirse del segmento.
+      const tam = Math.min(8, 50 / (s.etiqueta.length * 0.55)).toFixed(2);
       const texto = s.icono
         ? `<text x="${tx}" y="${ty - 4}" font-size="13" text-anchor="middle">${s.icono}</text>
-           <text x="${tx}" y="${ty + 9}" font-size="7.5" fill="${tinta}" text-anchor="middle" font-weight="700">${esc(s.etiqueta)}</text>`
-        : `<text x="${tx}" y="${ty}" font-size="8" fill="${tinta}" text-anchor="middle" dominant-baseline="middle" font-weight="700"
+           <text class="rueda-texto" x="${tx}" y="${ty + 9}" font-size="7.5" text-anchor="middle">${esc(s.etiqueta)}</text>`
+        : `<text class="rueda-texto" x="${tx}" y="${ty}" font-size="${tam}" text-anchor="middle" dominant-baseline="middle"
              transform="rotate(${medio > 180 ? medio + 90 : medio - 90} ${tx} ${ty})">${esc(s.etiqueta)}</text>`;
-      return `<path d="M100 100 L${x1} ${y1} A96 96 0 0 1 ${x2} ${y2} Z" fill="${s.color}" stroke="#fffdf6" stroke-width="1.5"/>${texto}`;
+      return `<path d="M100 100 L${x1} ${y1} A96 96 0 0 1 ${x2} ${y2} Z" style="fill:${colorRueda(i)}" stroke="#fffdf6" stroke-width="1.5"/>${texto}`;
     })
     .join('');
 
@@ -38,7 +35,7 @@ export function rueda(segmentos, { dona = true } = {}) {
       ${porciones}
       ${dona ? '<circle cx="100" cy="100" r="40" style="fill:var(--fondo)" stroke="#fffdf6" stroke-width="3"/>' : ''}
     </svg>
-    <svg class="rueda-puntero" viewBox="0 0 40 40" aria-hidden="true"><path d="M20 38 L6 8 Q20 0 34 8 Z" fill="#f0a39a" stroke="#2b3a6b" stroke-width="2.5" stroke-linejoin="round"/></svg>`;
+    <svg class="rueda-puntero" viewBox="0 0 40 40" aria-hidden="true"><path d="M20 38 L6 8 Q20 0 34 8 Z" style="fill:var(--acento);stroke:var(--tinta)" stroke-width="2.5" stroke-linejoin="round"/></svg>`;
   const giro = el.querySelector('.rueda-giro');
   let angulo = 0;
 

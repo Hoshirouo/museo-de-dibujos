@@ -1,12 +1,12 @@
 // "¿Qué dibujo hoy?": ruleta de 10 categorías con un reto al azar.
 import { CATEGORIAS_RETO } from '../data/retos.js';
-import { rueda } from '../rueda.js';
+import { rueda, colorRueda } from '../rueda.js';
 import { toast } from '../ui.js';
 import { agregarMeta } from './metas.js';
 import { formularioObra } from './galeria.js';
 
 export default async function ruleta(el) {
-  const r = rueda(CATEGORIAS_RETO.map((c) => ({ etiqueta: c.nombre, color: c.color })));
+  const r = rueda(CATEGORIAS_RETO.map((c) => ({ etiqueta: c.nombre })));
   let actual = null;
 
   el.innerHTML = `
@@ -35,8 +35,7 @@ export default async function ruleta(el) {
     el.querySelector('[data-resultado]').hidden = false;
     const chip = el.querySelector('[data-cat]');
     chip.textContent = cat.nombre;
-    chip.style.background = cat.color;
-    chip.style.color = cat.tinta ? 'var(--tinta)' : '';
+    chip.style.background = colorRueda(CATEGORIAS_RETO.indexOf(cat));
     el.querySelector('[data-reto]').textContent = reto;
   };
   const retoAzar = (cat, evitar) => {

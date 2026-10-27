@@ -126,7 +126,7 @@ function edificio(obras) {
     <path class="vidrio" d="M266 700 V646 a34 34 0 0 1 68 0 V700z" fill="#fbe3a0"/>
     <circle cx="336" cy="722" r="5" fill="#f7d98b"/>
     <rect x="252" y="586" width="96" height="26" rx="6" fill="#2b3a6b"/>
-    <text x="300" y="605" text-anchor="middle" font-size="18" fill="#fffdf6" font-family="Gaegu, cursive" font-weight="700">MUSEO</text>
+    <text x="300" y="605" text-anchor="middle" font-size="18" fill="#fffdf6" font-family="Patrick Hand, cursive">MUSEO</text>
   </a>
 
   <!-- planta baja: metas -->
