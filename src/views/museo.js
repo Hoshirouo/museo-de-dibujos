@@ -1,8 +1,10 @@
-// Pantalla principal: el museo como edificio. Cada ventana lleva a una zona.
-import { todos } from '../db.js';
-import { esc, urlDe, fechaISO, inicioSemana } from '../ui.js';
+// Inicio tipo perfil: portada, avatar y un tablero de widgets.
+// El edificio del museo sigue aquí como un widget más.
+import { todos, ajuste, guardarAjuste } from '../db.js';
+import { esc, urlDe, fechaISO, inicioSemana, modal, toast, escalonar, miniatura, MESES } from '../ui.js';
 import { retoDelDia } from '../data/calendario.js';
-import { diasDibujados } from './metas.js';
+import { diasDibujados, resumenMetas } from './metas.js';
+import { recargar } from '../main.js';
 
 // Letrero colgante bajo una ventana.
 const letrero = (x, y, ancho, texto) => `
@@ -34,7 +36,7 @@ function edificio(obras) {
   return `
 <svg class="edificio" viewBox="0 0 600 800" role="group" aria-label="Edificio del museo">
   <!-- nubes y estrellas -->
-  <g fill="#fffdf6" opacity=".75">
+  <g class="nube" fill="#fffdf6" opacity=".75">
     <ellipse cx="70" cy="60" rx="46" ry="16"/><ellipse cx="100" cy="48" rx="30" ry="16"/>
     <ellipse cx="540" cy="120" rx="40" ry="14"/><ellipse cx="560" cy="108" rx="24" ry="13"/>
   </g>
@@ -43,6 +45,7 @@ function edificio(obras) {
 
   <!-- chimenea y tejado -->
   <rect x="430" y="28" width="34" height="62" fill="#a85640"/><rect x="424" y="22" width="46" height="12" fill="#8c4533"/>
+  <circle class="humo" cx="447" cy="12" r="9" fill="#fffdf6"/><circle class="humo" cx="447" cy="12" r="7" fill="#fffdf6" style="animation-delay:-2s"/>
   <polygon points="36,180 104,66 496,66 564,180" fill="#c8644a"/>
   <g stroke="#a85640" stroke-width="3" opacity=".7">
     <line x1="80" y1="105" x2="520" y2="105"/><line x1="58" y1="142" x2="542" y2="142"/>
@@ -149,33 +152,255 @@ function edificio(obras) {
 </svg>`;
 }
 
+const PERFIL_INICIAL = {
+  nombre: 'Mi museo',
+  bio: 'Un rincón para mis dibujos, bocetos y retos ✿',
+  avatarEmoji: '🎨',
+  frase: 'Cada dibujo cuenta, incluso los que no salen como quería.',
+  recordatorios: [
+    { texto: 'Tomar agua', hecho: false },
+    { texto: 'Estirar las manos antes de dibujar', hecho: false },
+    { texto: 'Guardar una copia de mis dibujos', hecho: false },
+  ],
+  cancion: '',
+};
+
+export const perfil = async () => ({ ...PERFIL_INICIAL, ...(await ajuste('perfil', {})) });
+const guardarPerfil = (p) => guardarAjuste('perfil', p);
+
+const ESPACIO = [
+  ['#/galeria', '🖼️', 'Galería'],
+  ['#/bocetos', '📚', 'Cuadernos de bocetos'],
+  ['#/calendario', '📅', 'Calendario diario'],
+  ['#/ruleta', '🎡', '¿Qué dibujo hoy?'],
+  ['#/metas', '📌', 'Metas de la semana'],
+  ['#/galeria/Teor%C3%ADa%20del%20color', '🎨', 'Teoría del color'],
+];
+
+const DIAS_CORTOS = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
+
+function miniCalendario(hoy, hechos) {
+  const primero = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
+  const total = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 0).getDate();
+  const celdas = Array((primero.getDay() + 6) % 7).fill('');
+  for (let d = 1; d <= total; d++) celdas.push(d);
+  while (celdas.length % 7) celdas.push('');
+  const filas = [];
+  for (let i = 0; i < celdas.length; i += 7) {
+    filas.push(
+      `<tr>${celdas
+        .slice(i, i + 7)
+        .map((d) => {
+          if (!d) return '<td></td>';
+          const iso = fechaISO(new Date(hoy.getFullYear(), hoy.getMonth(), d));
+          const clases = [d === hoy.getDate() && 'hoy', hechos.has(iso) && 'hecho'].filter(Boolean).join(' ');
+          return `<td><span class="${clases}">${d}</span></td>`;
+        })
+        .join('')}</tr>`,
+    );
+  }
+  return `<div class="mini-cal-mes">${MESES[hoy.getMonth()]} ${hoy.getFullYear()}</div>
+    <table class="mini-cal"><thead><tr>${DIAS_CORTOS.map((d) => `<th>${d}</th>`).join('')}</tr></thead><tbody>${filas.join('')}</tbody></table>`;
+}
+
+// Cuánto va del año, mes, semana y día (como en las plantillas de Notion).
+function progresoTiempo(ahora) {
+  const pct = (desde, hasta) => Math.round(((ahora - desde) / (hasta - desde)) * 100);
+  const a = ahora.getFullYear(), m = ahora.getMonth();
+  const lunes = inicioSemana(ahora);
+  const finSemana = new Date(lunes);
+  finSemana.setDate(finSemana.getDate() + 7);
+  const dia = new Date(a, m, ahora.getDate());
+  return [
+    ['Año', pct(new Date(a, 0, 1), new Date(a + 1, 0, 1))],
+    ['Mes', pct(new Date(a, m, 1), new Date(a, m + 1, 1))],
+    ['Semana', pct(lunes, finSemana)],
+    ['Día', pct(dia, new Date(a, m, ahora.getDate() + 1))],
+  ];
+}
+
+const widget = (icono, titulo, cuerpo, clase = '') =>
+  `<section class="widget ${clase}"><h2 class="widget-titulo"><span class="icono">${icono}</span>${titulo}</h2><div class="widget-cuerpo">${cuerpo}</div></section>`;
+
 export default async function museo(el) {
-  const [obras, eventos, diario] = await Promise.all([todos('obras'), todos('eventos'), todos('diario')]);
+  const [obras, eventos, diario, p, metas] = await Promise.all([todos('obras'), todos('eventos'), todos('diario'), perfil(), resumenMetas()]);
   obras.sort((a, b) => (b.creado || 0) - (a.creado || 0));
-  const hoy = fechaISO();
+  const ahora = new Date();
+  const hoy = fechaISO(ahora);
   const reto = retoDelDia(hoy, eventos);
   const hecho = diario.some((d) => d.fecha === hoy);
   const dias = await diasDibujados(inicioSemana());
+  const hechosMes = new Set(diario.map((d) => d.fecha));
+  const recientes = obras.slice(0, 4);
+
+  const portada = p.portada ? `<img class="portada-img" src="${urlDe(p.portada)}" alt="">` : '';
+  const decos = p.portada
+    ? ''
+    : ['✦', '☁', '★', '✿', '☁', '✦']
+        .map((c, i) => `<span class="deco" style="left:${8 + i * 16}%;top:${18 + ((i * 37) % 55)}%;animation-delay:${-i * 1.1}s">${c}</span>`)
+        .join('');
+
+  const mosaico = [0, 1, 2, 3]
+    .map((i) => {
+      const o = recientes[i];
+      return o
+        ? `<a href="#/galeria" title="${esc(o.titulo)}"><img src="${urlDe(o.mini || o.imagen)}" alt="${esc(o.titulo)}" loading="lazy"></a>`
+        : `<a href="#/galeria" aria-label="Colgar una obra"><span class="hueco">${['✿', '☁', '★', '♡'][i]}</span></a>`;
+    })
+    .join('');
+
+  const barras = progresoTiempo(ahora)
+    .concat([['Días dibujando', Math.round((dias.size / 7) * 100), `${dias.size}/7`]])
+    .map(([n, v, etiqueta]) => `<div class="barra-prog"><span>${n}</span><span class="ayuda">${etiqueta || `${v}%`}</span><div class="pista"><i data-ancho="${v}"></i></div></div>`)
+    .join('');
+
+  const listaMetas = metas
+    .map((m) => {
+      const ok = m.progreso >= m.objetivo;
+      return `<li class="${ok ? 'hecha' : ''}"><input type="checkbox" disabled ${ok ? 'checked' : ''} aria-label="${ok ? 'Cumplida' : 'Pendiente'}"><span>${esc(m.texto)}</span><span class="ayuda" style="margin-left:auto">${m.progreso}/${m.objetivo}</span></li>`;
+    })
+    .join('');
+
+  const recordatorios = p.recordatorios
+    .map((r, i) => `<li class="${r.hecho ? 'hecha' : ''}"><input type="checkbox" data-i="${i}" ${r.hecho ? 'checked' : ''} id="rec${i}"><label for="rec${i}"><span>${esc(r.texto)}</span></label><button class="quitar" data-quitar="${i}" aria-label="Quitar recordatorio">✕</button></li>`)
+    .join('');
+
+  const musica = p.musica
+    ? `<div class="musica"><div class="fila"><div class="musica-disco" data-disco></div><div style="flex:1;min-width:0"><strong style="display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(p.cancion || 'Mi canción')}</strong><div class="ondas" data-ondas>${'<i></i>'.repeat(14)}</div></div></div><audio controls loop preload="metadata" src="${urlDe(p.musica)}"></audio></div>`
+    : `<div class="musica"><div class="fila"><div class="musica-disco"></div><p class="ayuda" style="margin:0;flex:1">Sube tu canción favorita para dibujar en <strong>✎ Personalizar</strong>.</p></div></div>`;
 
   el.innerHTML = `
-    <div class="museo-escena">
-      ${edificio(obras)}
-      <aside class="museo-lateral">
-        <section class="papel cinta tarjeta-hoy">
-          <h2>Reto de hoy</h2>
-          ${reto.tematico ? `<p class="ayuda">✨ ${esc(reto.tematico)}</p>` : ''}
+    <div class="portada">${portada}${decos}<button class="btn chico" data-acc="personalizar">✎ Personalizar</button></div>
+    <div class="perfil-cabecera">
+      <div class="avatar">${p.avatar ? `<img src="${urlDe(p.avatar)}" alt="Foto de perfil">` : `<span aria-hidden="true">${esc(p.avatarEmoji)}</span>`}</div>
+      <div class="perfil-texto"><h1>${esc(p.nombre)}</h1><p>${esc(p.bio)}</p></div>
+    </div>
+    <div class="tablero">
+      ${widget('🏠', 'Mi espacio', `<ul class="menu-espacio">${ESPACIO.map(([h, i, t]) => `<li><a href="${h}"><span aria-hidden="true">${i}</span>${t}</a></li>`).join('')}<li class="perlas" aria-hidden="true">${'○'.repeat(24)}</li></ul>`)}
+      ${widget('✏️', 'Reto de hoy', `
+        <div class="reto-mini">
+          ${reto.tematico ? `<p class="ayuda" style="margin:0">✨ ${esc(reto.tematico)}</p>` : ''}
           <div class="palabra-grande">${esc(reto.palabra)}</div>
-          <p>${esc(reto.significado)}</p>
-          <p class="muestra-color"><i style="background:${reto.color.hex}"></i>${esc(reto.color.nombre)} · ${reto.color.hex}</p>
-          <a class="btn ${hecho ? '' : 'primario'}" href="#/calendario">${hecho ? '✓ Ya dibujaste hoy' : 'Subir dibujo de hoy'}</a>
-        </section>
-        <section class="papel">
-          <h2>Esta semana</h2>
-          <p><strong>${dias.size}</strong> de 7 días dibujando</p>
-          <div class="cal-progreso"><i style="width:${(dias.size / 7) * 100}%"></i></div>
-          <p class="ayuda" style="margin-top:12px">${obras.length} obras en la galería</p>
-          <a class="btn" href="#/ruleta">🎡 ¿Qué dibujo hoy?</a>
-        </section>
-      </aside>
+          <p style="margin:6px 0 10px">${esc(reto.significado)}</p>
+          <p class="muestra-color" style="margin:0 0 14px"><i style="background:${reto.color.hex}"></i>${esc(reto.color.nombre)} · ${reto.color.hex}</p>
+          <a class="btn chico ${hecho ? '' : 'primario'}" href="#/calendario">${hecho ? '✓ Ya dibujaste hoy' : 'Subir dibujo de hoy'}</a>
+        </div>`)}
+      ${widget('⏰', 'Ahora', `<div class="reloj"><div><b data-h></b><span>hora</span></div><div><b data-m></b><span>min</span></div></div><p class="reloj-fecha" data-fecha></p>`)}
+      ${widget('🖼️', 'Últimas obras', `<div class="mosaico">${mosaico}</div>${obras.length ? '' : '<p class="ayuda" style="margin:10px 0 0">Aquí aparecerán tus obras más recientes.</p>'}`, 'ancho')}
+      ${widget('📅', 'Calendario', miniCalendario(ahora, hechosMes))}
+      ${widget('📈', 'Progreso', `<div class="barras">${barras}</div>`)}
+      ${widget('📌', 'Metas de la semana', `<ul class="lista-check">${listaMetas}</ul><a class="btn chico" href="#/metas" style="margin-top:12px">Ver metas</a>`)}
+      <blockquote class="frase" style="margin:0">${esc(p.frase)}</blockquote>
+      ${widget('🌼', 'Recordatorios', `<ul class="lista-check" data-recordatorios>${recordatorios}</ul>
+        <form class="nueva-nota" data-nueva><input name="texto" maxlength="80" placeholder="Nuevo recordatorio…" aria-label="Nuevo recordatorio" required><button class="btn chico">+</button></form>`)}
+      ${widget('🎵', 'Ahora suena', musica)}
+      ${widget('🏛️', 'Mi museo', edificio(obras), 'widget-edificio')}
     </div>`;
+
+  escalonar(el.querySelector('.tablero'));
+
+  // Reloj en vivo; se detiene solo al salir de la pantalla.
+  const h = el.querySelector('[data-h]'), m = el.querySelector('[data-m]'), f = el.querySelector('[data-fecha]');
+  const poner = (nodo, valor) => {
+    if (nodo.textContent === valor) return;
+    nodo.textContent = valor;
+    nodo.classList.remove('cambio');
+    void nodo.offsetWidth;
+    nodo.classList.add('cambio');
+  };
+  let montado = false;
+  const tic = () => {
+    if (el.isConnected) montado = true;
+    else if (montado) return clearInterval(intervalo);
+    const d = new Date();
+    poner(h, String(d.getHours()).padStart(2, '0'));
+    poner(m, String(d.getMinutes()).padStart(2, '0'));
+    f.textContent = d.toLocaleDateString('es-PE', { weekday: 'long', day: 'numeric', month: 'long' });
+  };
+  const intervalo = setInterval(tic, 1000);
+  tic();
+
+  // Las barras se llenan con animación al aparecer.
+  setTimeout(() => el.querySelectorAll('[data-ancho]').forEach((i) => (i.style.width = `${i.dataset.ancho}%`)), 350);
+
+  const audio = el.querySelector('audio');
+  if (audio) {
+    const disco = el.querySelector('[data-disco]'), ondas = el.querySelector('[data-ondas]');
+    const estado = () => (disco.classList.toggle('sonando', !audio.paused), ondas.classList.toggle('activas', !audio.paused));
+    audio.addEventListener('play', estado);
+    audio.addEventListener('pause', estado);
+  }
+
+  // Recordatorios editables en el mismo tablero.
+  const listaRec = el.querySelector('[data-recordatorios]');
+  listaRec.addEventListener('change', async (e) => {
+    const i = +e.target.dataset.i;
+    p.recordatorios[i].hecho = e.target.checked;
+    e.target.closest('li').classList.toggle('hecha', e.target.checked);
+    await guardarPerfil(p);
+  });
+  listaRec.addEventListener('click', async (e) => {
+    const b = e.target.closest('[data-quitar]');
+    if (!b) return;
+    p.recordatorios.splice(+b.dataset.quitar, 1);
+    await guardarPerfil(p);
+    recargar();
+  });
+  el.querySelector('[data-nueva]').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    p.recordatorios.push({ texto: e.target.texto.value.trim(), hecho: false });
+    await guardarPerfil(p);
+    recargar();
+  });
+
+  el.querySelector('[data-acc="personalizar"]').addEventListener('click', () => personalizar(p));
+}
+
+function personalizar(p) {
+  const d = modal(`
+    <h2>Personalizar mi espacio</h2>
+    <form>
+      <div class="campo"><label for="pn">Nombre o título</label><input id="pn" name="nombre" maxlength="40" required value="${esc(p.nombre)}"></div>
+      <div class="campo"><label for="pb">Descripción</label><input id="pb" name="bio" maxlength="120" value="${esc(p.bio)}"></div>
+      <div class="campo"><label for="pf">Frase favorita</label><textarea id="pf" name="frase" maxlength="300">${esc(p.frase)}</textarea></div>
+      <div class="campo"><label for="pp">Imagen de portada</label><input id="pp" type="file" name="portada" accept="image/*">
+        ${p.portada ? '<label class="ayuda"><input type="checkbox" name="quitarPortada"> Quitar la portada actual</label>' : ''}</div>
+      <div class="fila">
+        <div class="campo" style="flex:2"><label for="pa">Foto de perfil</label><input id="pa" type="file" name="avatar" accept="image/*"></div>
+        <div class="campo" style="flex:1"><label for="pe">o un emoji</label><input id="pe" name="avatarEmoji" maxlength="4" value="${esc(p.avatarEmoji)}"></div>
+      </div>
+      ${p.avatar ? '<label class="ayuda" style="display:block;margin:-8px 0 14px"><input type="checkbox" name="quitarAvatar"> Quitar la foto y usar el emoji</label>' : ''}
+      <div class="campo"><label for="pm">Canción (archivo de audio)</label><input id="pm" type="file" name="musica" accept="audio/*">
+        ${p.musica ? '<label class="ayuda"><input type="checkbox" name="quitarMusica"> Quitar la canción</label>' : ''}</div>
+      <div class="campo"><label for="pc">Nombre de la canción</label><input id="pc" name="cancion" maxlength="80" value="${esc(p.cancion)}" placeholder="Ej: Snow flower — V"></div>
+      <div class="acciones"><button class="btn primario">Guardar</button></div>
+    </form>`);
+  d.querySelector('form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = e.target.querySelector('button.primario');
+    btn.disabled = true;
+    btn.textContent = 'Guardando…';
+    const f = new FormData(e.target);
+    const nuevo = {
+      ...p,
+      nombre: f.get('nombre').trim(),
+      bio: f.get('bio').trim(),
+      frase: f.get('frase').trim(),
+      avatarEmoji: f.get('avatarEmoji').trim() || '🎨',
+      cancion: f.get('cancion').trim(),
+    };
+    const archivo = (n) => (f.get(n) && f.get(n).size ? f.get(n) : null);
+    if (archivo('portada')) nuevo.portada = await miniatura(archivo('portada'), 2000);
+    else if (f.get('quitarPortada')) delete nuevo.portada;
+    if (archivo('avatar')) nuevo.avatar = await miniatura(archivo('avatar'), 400);
+    else if (f.get('quitarAvatar')) delete nuevo.avatar;
+    if (archivo('musica')) {
+      nuevo.musica = archivo('musica');
+      if (!nuevo.cancion) nuevo.cancion = nuevo.musica.name.replace(/\.[^.]+$/, '');
+    } else if (f.get('quitarMusica')) delete nuevo.musica;
+    await guardarPerfil(nuevo);
+    d.close();
+    toast('¡Tu espacio quedó lindo! ✿');
+    recargar();
+  });
 }

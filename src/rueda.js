@@ -36,7 +36,7 @@ export function rueda(segmentos, { dona = true } = {}) {
   el.innerHTML = `
     <svg class="rueda-giro" viewBox="0 0 200 200" role="img" aria-label="Ruleta">
       ${porciones}
-      ${dona ? '<circle cx="100" cy="100" r="40" fill="#d4dec6" stroke="#fffdf6" stroke-width="3"/>' : ''}
+      ${dona ? '<circle cx="100" cy="100" r="40" style="fill:var(--fondo)" stroke="#fffdf6" stroke-width="3"/>' : ''}
     </svg>
     <svg class="rueda-puntero" viewBox="0 0 40 40" aria-hidden="true"><path d="M20 38 L6 8 Q20 0 34 8 Z" fill="#f0a39a" stroke="#2b3a6b" stroke-width="2.5" stroke-linejoin="round"/></svg>`;
   const giro = el.querySelector('.rueda-giro');

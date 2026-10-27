@@ -12,16 +12,22 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Gaegu:wght@400;700&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet" />
     <title>Museo de mis dibujos</title>
+    <script>
+      // Aplica el tema guardado antes de pintar, para que no parpadee.
+      try { document.documentElement.dataset.tema = localStorage.getItem('tema') || 'salvia'; } catch (e) { document.documentElement.dataset.tema = 'salvia'; }
+    </script>
   </head>
   <body>
     <header class="barra">
-      <a class="marca" href="#/">Museo de mis dibujos</a>
+      <a class="marca" href="#/"><span class="marca-estrella" aria-hidden="true">✦</span> Museo de mis dibujos</a>
       <nav class="nav" aria-label="Secciones">
+        <a href="#/" data-ruta="">Inicio</a>
         <a href="#/galeria" data-ruta="galeria">Galería</a>
         <a href="#/bocetos" data-ruta="bocetos">Bocetos</a>
         <a href="#/calendario" data-ruta="calendario">Calendario</a>
         <a href="#/ruleta" data-ruta="ruleta">¿Qué dibujo hoy?</a>
         <a href="#/metas" data-ruta="metas">Metas</a>
+        <button class="nav-tema" type="button" aria-label="Cambiar tema" data-abrir-temas>🎨</button>
         <a href="#/ajustes" data-ruta="ajustes" aria-label="Ajustes">⚙</a>
       </nav>
     </header>

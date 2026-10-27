@@ -3,6 +3,7 @@ import { todos, guardar, borrar, nuevoId, ajuste, guardarAjuste, exportarTodo, i
 import { esc, urlDe, toast, confirmar, fechaISO } from '../ui.js';
 import { categorias } from './galeria.js';
 import { recargar } from '../main.js';
+import { selectorTemas } from '../temas.js';
 
 export default async function ajustes(el) {
   const [marcos, cats, eventos, defecto, uso] = await Promise.all([
@@ -14,6 +15,11 @@ export default async function ajustes(el) {
   el.innerHTML = `
     <div class="encabezado"><div><h1>Ajustes</h1></div></div>
     <div class="ajustes-grid">
+      <section class="papel completo">
+        <h2>Tema</h2>
+        <p class="ayuda">Cambia los colores de toda la web. También puedes usar el botón 🎨 de arriba.</p>
+        <div data-temas></div>
+      </section>
       <section class="papel">
         <h2>Mis marcos</h2>
         <p class="ayuda">Sube un PNG con el centro transparente. El “margen” indica cuánto ocupa el borde del marco.</p>
@@ -75,6 +81,8 @@ export default async function ajustes(el) {
         <p class="ayuda">Restaurar reemplaza todo lo que hay ahora por lo de la copia. También sirve para pasar tus dibujos de la PC a la tablet.</p>
       </section>
     </div>`;
+
+  el.querySelector('[data-temas]').append(selectorTemas());
 
   el.addEventListener('submit', async (e) => {
     e.preventDefault();

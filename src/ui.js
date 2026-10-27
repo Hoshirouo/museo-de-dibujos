@@ -165,3 +165,29 @@ export function inicioSemana(d = new Date()) {
   r.setDate(r.getDate() - ((r.getDay() + 6) % 7));
   return r;
 }
+
+// Lluvia de confeti para celebrar (premio, meta cumplida, obra nueva).
+export function celebrar(cantidad = 36) {
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const piezas = ['✦', '★', '❀', '♥', '✿', '●'];
+  const colores = ['var(--acento)', 'var(--acento-2)', 'var(--acento-3)', '#f0a39a', '#a9c1e3'];
+  for (let i = 0; i < cantidad; i++) {
+    const p = document.createElement('span');
+    p.className = 'confeti';
+    p.textContent = piezas[i % piezas.length];
+    p.style.left = `${Math.random() * 100}vw`;
+    p.style.color = colores[i % colores.length];
+    p.style.fontSize = `${0.8 + Math.random() * 1.1}rem`;
+    p.style.setProperty('--giro', `${(Math.random() - 0.5) * 900}deg`);
+    p.style.animationDuration = `${1.8 + Math.random() * 1.8}s`;
+    p.style.animationDelay = `${Math.random() * 0.4}s`;
+    p.addEventListener('animationend', () => p.remove());
+    document.body.append(p);
+  }
+}
+
+// Marca los hijos de un contenedor para que aparezcan uno tras otro.
+export function escalonar(contenedor) {
+  contenedor.classList.add('entrar');
+  [...contenedor.children].forEach((h, i) => h.style.setProperty('--i', i));
+}

@@ -1,5 +1,6 @@
 import './styles.css';
-import { nuevoLote, transicion } from './ui.js';
+import { nuevoLote, transicion, modal } from './ui.js';
+import { aplicarTema, temaActual, selectorTemas } from './temas.js';
 import { pedirPersistencia } from './db.js';
 import museo from './views/museo.js';
 import galeria from './views/galeria.js';
@@ -39,5 +40,10 @@ async function navegar(mismaPantalla = false) {
 export const recargar = () => navegar(true);
 
 window.addEventListener('hashchange', () => navegar());
+document.querySelector('[data-abrir-temas]').addEventListener('click', () => {
+  const d = modal('<h2>Elige un tema</h2><p class="ayuda">Se guarda en este dispositivo.</p>');
+  d.append(selectorTemas());
+});
+aplicarTema(temaActual());
 navegar();
 pedirPersistencia();

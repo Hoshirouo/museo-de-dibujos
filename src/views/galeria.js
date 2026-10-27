@@ -1,6 +1,6 @@
 // Galería tipo museo: cuadros enmarcados, filtros por categoría y ficha de cada obra.
 import { todos, guardar, borrar, nuevoId, ajuste, guardarAjuste } from '../db.js';
-import { esc, urlDe, modal, confirmar, toast, miniatura, fechaISO, fechaBonita, transicion, visor } from '../ui.js';
+import { esc, urlDe, modal, confirmar, toast, miniatura, fechaISO, fechaBonita, transicion, visor, celebrar, escalonar } from '../ui.js';
 import { recargar } from '../main.js';
 
 export const CATEGORIAS_INICIALES = ['Renders', 'Personajes', 'Fanart', 'Teoría del color', 'Escenarios', 'Retos', 'Otros'];
@@ -45,6 +45,7 @@ export default async function galeria(el, [filtroInicial]) {
           )
           .join('')
       : `<div class="vacio papel" style="grid-column:1/-1"><h2>Sala vacía</h2><p>${obras.length ? 'No hay obras en esta sala todavía.' : 'Cuelga tu primera obra con el botón “Colgar obra”.'}</p></div>`;
+    escalonar(cuadros);
   }
   pintar();
 
@@ -182,6 +183,7 @@ export async function formularioObra(obra, filtroActual, extra = {}) {
     }
     d.close();
     toast(nueva ? '¡Obra colgada! 🖼️' : 'Cambios guardados');
+    if (nueva) celebrar(24);
     if (location.hash.startsWith('#/galeria')) recargar();
   });
 }

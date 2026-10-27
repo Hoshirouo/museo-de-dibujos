@@ -1,7 +1,7 @@
 // Calendario del reto diario: una palabra al día, un color por mes,
 // miniaturas de cada dibujo y una ruleta de premios al completar el de hoy.
 import { todos, obtener, guardar, borrar, nuevoId, sumarInventario, ajuste, guardarAjuste } from '../db.js';
-import { esc, urlDe, modal, confirmar, toast, miniatura, fechaISO, deISO, fechaBonita, MESES, visor } from '../ui.js';
+import { esc, urlDe, modal, confirmar, toast, miniatura, fechaISO, deISO, fechaBonita, MESES, visor, celebrar } from '../ui.js';
 import { retoDelDia } from '../data/calendario.js';
 import { segmentosPremio, estacion } from '../data/premios.js';
 import { rueda } from '../rueda.js';
@@ -179,6 +179,7 @@ async function ruletaPremio(iso) {
     if (reg) await guardar('diario', { ...reg, premio });
     await r.girar(i);
     d.querySelector('[data-resultado]').textContent = `${segs[i].icono} Ganaste: ${premio.item} × ${premio.cantidad}`;
+    celebrar();
     e.target.disabled = false;
     e.target.textContent = '¡Genial! Cerrar';
   });

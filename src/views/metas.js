@@ -1,6 +1,6 @@
 // Metas de la semana. Algunas se llenan solas a partir de lo que se sube.
 import { todos, porIndice, guardar, borrar, nuevoId } from '../db.js';
-import { esc, fechaISO, deISO, inicioSemana, fechaBonita, modal, toast } from '../ui.js';
+import { esc, fechaISO, deISO, inicioSemana, fechaBonita, modal, toast, celebrar, escalonar } from '../ui.js';
 import { recargar } from '../main.js';
 
 const METAS_INICIALES = [
@@ -105,6 +105,8 @@ export default async function metas(el, [semanaParam]) {
       </aside>
     </div>`;
 
+  escalonar(el.querySelector('.lista-metas'));
+
   el.addEventListener('click', async (e) => {
     const b = e.target.closest('[data-acc]');
     if (!b) return;
@@ -113,7 +115,7 @@ export default async function metas(el, [semanaParam]) {
     if (b.dataset.acc === 'mas' || b.dataset.acc === 'menos') {
       meta.progreso = Math.max(0, Math.min(meta.objetivo, meta.progreso + (b.dataset.acc === 'mas' ? 1 : -1)));
       await guardar('metas', meta);
-      if (meta.progreso === meta.objetivo) toast('¡Meta cumplida! 🌟');
+      if (meta.progreso === meta.objetivo) toast('¡Meta cumplida! 🌟'), celebrar();
       recargar();
     } else if (b.dataset.acc === 'borrar') {
       await borrar('metas', id);
@@ -134,5 +136,15 @@ export default async function metas(el, [semanaParam]) {
         recargar();
       });
     }
+  });
+}
+
+// Resumen de las metas de esta semana con su progreso (para el inicio).
+export async function resumenMetas() {
+  const lunes = inicioSemana();
+  const [lista, dias, bocetos] = await Promise.all([metasDe(fechaISO(lunes)), diasDibujados(lunes), bocetosDeSemana(lunes)]);
+  return lista.map((m) => {
+    const p = m.auto === 'dias' ? dias.size : m.auto === 'bocetos' ? bocetos : m.progreso;
+    return { texto: m.texto, objetivo: m.objetivo, progreso: Math.min(p, m.objetivo) };
   });
 }
