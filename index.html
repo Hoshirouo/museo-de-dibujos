@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#d4dec6" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Mis dibujos" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon-180x180.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Gaegu:wght@400;700&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet" />
+    <title>Museo de mis dibujos</title>
+  </head>
+  <body>
+    <header class="barra">
+      <a class="marca" href="#/">Museo de mis dibujos</a>
+      <nav class="nav" aria-label="Secciones">
+        <a href="#/galeria" data-ruta="galeria">Galería</a>
+        <a href="#/bocetos" data-ruta="bocetos">Bocetos</a>
+        <a href="#/calendario" data-ruta="calendario">Calendario</a>
+        <a href="#/ruleta" data-ruta="ruleta">¿Qué dibujo hoy?</a>
+        <a href="#/metas" data-ruta="metas">Metas</a>
+        <a href="#/ajustes" data-ruta="ajustes" aria-label="Ajustes">⚙</a>
+      </nav>
+    </header>
+    <main id="app"></main>
+    <div id="toast" role="status" aria-live="polite"></div>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
